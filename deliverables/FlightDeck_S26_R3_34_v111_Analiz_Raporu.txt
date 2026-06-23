@@ -1,0 +1,358 @@
+================================================================================
+FLIGHTDECK S26 R3.34 v111 — KAPSAMLI ANALİZ RAPORU
+================================================================================
+
+Dosya     : FlightDeck_S26_R3_34_v111_PROD_CANDIDATE.html
+Boyut     : 25.578 satır · 1,84 MB (1.931.223 byte)
+Analiz    : 23 Haziran 2026
+Yöntem    : 7 bağımsız ajan paralel inceleme (Salt okunur — hiçbir değişiklik yapılmamıştır)
+
+================================================================================
+ÖZET KARAR
+================================================================================
+
+Genel Puan   : 7,2 / 10
+Ship Kararı  : KOŞULLU — 7 zorunlu düzeltme gerekli
+
+Uygulama ticari açıdan olgunlaşmış, matematik doğrulanmış, fakat 5 XSS açığı
+ve 1 kritik veri mimarisi açığı üretim ortamına geçişi engellemiştir.
+
+PUANLAR
+-------
+CEO & Ticari Analitik          : 8,2 / 10
+Tasarım & UX                   : 7,4 / 10
+Mühendislik Mimarisi           : 7,0 / 10
+Matematik (PACE)               : 8,5 / 10
+Güvenlik (OWASP+STRIDE)        : 6,5 / 10
+Performans & Bundle            : 6,8 / 10
+Türkçe Yerelleştirme           : 7,5 / 10
+Veri Mimarisi                  : 6,0 / 10
+─────────────────────────────────────────
+GENEL                          : 7,2 / 10
+
+================================================================================
+1. CEO & TİCARİ ANALİTİK — 8,2 / 10
+================================================================================
+
+GÜÇLÜ YÖNLER
+─────────────
+
+PACE (Satış Hızı) Motoru — v111 Düzeltmeleri Doğrulandı
+Dört matematiksel düzeltme incelenmiş ve tümü doğru bulunmuştur:
+  • Penetrasyon hesabı : soldSeats / (soldSeats + availableSeats) → doğru
+  • Hedef karşılaştırma: kümülatif bazda normalize → doğru
+  • Haftalık trend eğimi: regresyon tabanlı → doğru
+  • Beklenen satış hızı: dönem ağırlıklı ortalama → doğru
+
+Partner DNA Analizi
+S25 rezervasyon geçmişinden türetilen davranışsal örüntü analizi; partner başına
+önde gitme/geride kalma eğilimi, iptal riski ve çapraz pazar fırsatı tespiti
+yapılıyor. Ticari zeka seviyesi üst düzey.
+
+Gecikme Maliyeti (Cost of Delay)
+Aşamalı model (getCostOfDelay(), satır 2608–2640) faz başına fırsatın yeniden
+kazanılabilirlik faktörünü hesaplıyor.
+
+ZAYIF YÖNLER
+─────────────
+
+recoverableFactor = 0,60 — Aşırı İyimser
+Antalya gibi charter-dominant pazarlarda realite %30–40 bandında. Gecikme maliyeti
+tahminleri yaklaşık %50 düşük çıkıyor; bu direktöre yanlış aciliyet sinyali veriyor.
+Öneri: DEFAULT_SETTINGS'e recoverableFactor parametresi ekleyin, CEO ayarları
+panelinden düzenlenebilir yapın.
+
+Aksiyon Motoru — 5 Yerde "Early Bird" Çevrilmemiş
+buildActionPlaybook() (satır 2771–2873) Türkçe çağrı senaryoları üretiyor fakat
+5 yerde İngilizce "early bird" geçiyor.
+Öneri: "erken rezervasyon avantajı" ile değiştirin.
+
+================================================================================
+2. TASARIM & KULLANICI DENEYİMİ — 7,4 / 10
+================================================================================
+
+GÜÇLÜ YÖNLER
+─────────────
+
+Tasarım Token Sistemi
+CSS custom properties üzerinde eksiksiz dark/light mode; renk, boşluk ve tipografi
+tutarlı şekilde tokenize edilmiş. Tailwind veya benzeri framework olmaksızın bu
+tutarlılık takdire değer.
+
+ARIA & Klavye Erişimi
+Tab ARIA örüntüsü roving tabindex ile örneksel düzeyde uygulanmış; modal dialog
+roller ve focus trap doğru çalışıyor.
+
+B4/B5 Değişiklikleri (Önceki Oturumdan)
+Dosya yolu uyarı modalı (B4) ve CEO Walkthrough (B5) temiz entegre edilmiş.
+
+ZAYIF YÖNLER
+─────────────
+
+Dokunma Hedefleri WCAG AA'yı Karşılamıyor (KRİTİK)
+Kritik aksiyon butonları ~28–30px; WCAG 2.1 Kriter 2.5.5 minimum 44×44px zorunlu
+kılıyor. Tablet/mobil kullanım senaryolarında hata riski yüksek.
+Öneri: .btn-sm sınıfı için min-height: 44px; min-width: 44px ekleyin.
+
+Responsive Breakpoint Eksikliği
+Veri tabloları 768px altında yatay kaymaya zorluyor; iPad landscape'te pivot tablo
+kırılıyor.
+
+================================================================================
+3. MÜHENDİSLİK MİMARİSİ — 7,0 / 10
+================================================================================
+
+GÜÇLÜ YÖNLER
+─────────────
+
+Tek Dosya Mimarisi — Başarılı
+25.578 satır, 1,84 MB; CDN bağımlılıkları olmadan çalışıyor (SRI hash'leri
+sayesinde). Dağıtım → dosyayı kopyala, bitti. Charter havacılık operatörleri için
+bağlantısız ortam gerçekliği göz önüne alındığında bu doğru tercih.
+
+CSP / SRI
+5 CDN kütüphanesi SHA-512 hash'leriyle sabitlenmiş:
+  • Chart.js 4.4.1
+  • xlsx 0.18.5
+  • exceljs 4.3.0
+  • html2canvas 1.4.1
+  • jsPDF 2.5.1
+Tedarik zinciri saldırısına karşı dirençli.
+
+XSS Temel Koruması
+esc(), escAttr(), jsAttr() fonksiyonları (satır 1336–1361) doğru implement edilmiş.
+ceoName ve ayar alanları bu korumadan geçiyor.
+
+Dahili Test Paketi
+~105 test, _DEBUG bayrağının arkasında; PACE matematik testleri, XSS testleri,
+ceoName testleri dahil (satır 24086–25578).
+
+ZAYIF YÖNLER
+─────────────
+
+Küresel keydown Dinleyicisi Sızıntısı
+Satır 21659 ve 21706'da iki global keydown listener removeEventListener çağrısı
+olmaksızın ekleniyor. Uzun oturumlar veya SPA-tarzı yeniden mount'ta bellek
+sızıntısına yol açar.
+
+xlsx İki Kez Yükleniyor (~900 KB fazladan)
+Ana thread + Web Worker ikisi de xlsx'yi ayrı ayrı yüklüyor.
+
+================================================================================
+4. GÜVENLİK — OWASP Top 10 + STRIDE — 6,5 / 10
+================================================================================
+
+ÖNEMLİ NOT: Mühendislik ajanı "kritik güvenlik açığı yok" sonucuna varmıştı.
+Bağımsız OWASP ajanı 5 aktif XSS sink buldu. Bunların tümü üretim öncesi
+düzeltilmesi zorunlu HIGH/MEDIUM seviye açıklardır.
+
+KRİTİK: 5 XSS AÇIĞI
+─────────────────────
+
+Açık 1 — YÜKSEK: Pivot Tablo Başlığı (Satır 4163)
+  AÇIK   : <div class="p-dc-hdr">Uçuş Takvimi — ${pKey} / ${mLong(mKey)||mKey}</div>
+  DÜZELTME: <div class="p-dc-hdr">Uçuş Takvimi — ${esc(pKey)} / ${mLong(mKey)||mKey}</div>
+  Neden  : pKey Excel'den gelen partner anahtarı; <script> içerebilir.
+
+Açık 2 — YÜKSEK: Breadcrumb Navigasyon (Satır 4221)
+  AÇIK   : const lbl = item.type==='month' ? (mLong(item.key)||item.key) : item.key;
+  DÜZELTME: const lbl = item.type==='month' ? (mLong(item.key)||esc(item.key)) : esc(item.key);
+
+Açık 3 — YÜKSEK: Drill-down Tablo Hücreleri (Satır 4169)
+  AÇIK   : <td>${[r.Flight,r.Airline].filter(Boolean).join(' ')||'—'}</td>
+  DÜZELTME: <td>${esc([r.Flight,r.Airline].filter(Boolean).join(' ')||'—')}</td>
+  Neden  : r.Flight ve r.Airline doğrudan Excel'den okunuyor.
+
+Açık 4 — ORTA: Hata Mesajları (Satır 19637, 22961 — iki nokta)
+  AÇIK   : el.innerHTML = '<div>Hata: ' + e.message + '</div>';
+  DÜZELTME: el.innerHTML = '<div>Hata: ' + esc(e.message) + '</div>';
+
+Açık 5 — ORTA: Yedek Meta Verisi (Satır 19186–19187)
+  AÇIK   : <div>${versionMsg}</div><div>Oluşturulma: ${timestampMsg}</div>
+  DÜZELTME: <div>${esc(versionMsg)}</div><div>Oluşturulma: ${esc(timestampMsg)}</div>
+
+STRIDE TEHDIT MODELİ
+─────────────────────
+
+Tehdit                 | Durum      | Notlar
+─────────────────────────────────────────────────────────────────
+Spoofing               | Düşük risk | localStorage origin-scoped
+Tampering              | YÜKSEK     | 5 XSS sink + IDB non-atomic
+Repudiation            | Orta       | Snapshot log var, bütünlük yok
+Information Disclosure | Orta       | localStorage plaintext
+DoS                    | Düşük      | Tek kullanıcı, offline
+Elevation of Privilege | YÜKSEK     | XSS → script exec
+
+================================================================================
+5. PERFORMANS & BUNDLE — 6,8 / 10
+================================================================================
+
+GÜÇLÜ YÖNLER
+─────────────
+
+Web Worker — Excel Parse Offload
+Excel parse işlemi Worker'a taşınmış, 120s timeout ile ana thread bloklanmıyor.
+Doğru mimari karar.
+
+SRI + CDN Cache
+Kütüphaneler CDN'den integrity hash'li yükleniyor; tarayıcı cache'leme etkin.
+
+ZAYIF YÖNLER
+─────────────
+
+xlsx İki Kez Yükleniyor (~900 KB)
+Ana thread import('xlsx') yapıyor, Worker da ayrıca importScripts('xlsx') çağırıyor.
+Çözüm: xlsx'yi yalnızca Worker'da tutun, sonuçları JSON olarak ana thread'e gönderin.
+
+Chart.js 4 Instance — Tekrar Kullanım Yok
+Her render'da new Chart() çağrılıyor, önceki instance destroy edilmiyor.
+Uzun oturumda canvas context sızıntısı.
+
+İlk Yük ~1,84 MB
+Tüm JS + CSS + HTML inline; ilk parse ~2–4 saniye (orta sınıf laptop).
+
+================================================================================
+6. TÜRKÇE YERELLEŞTİRME — 7,5 / 10
+================================================================================
+
+GÜÇLÜ YÖNLER
+─────────────
+
+_trSuffix() — Türkçe Sesli Uyumu Doğrulandı
+Yöntem (satır 1970–2035) sekiz sesli uyum kategorisini doğru tanımlıyor:
+  • _trSuffix("Ankara", "için") → "Ankara için"
+  • _trSuffix("İzmir",  "için") → "İzmir için"
+Test coverage'la destekleniyor. Teknik açıdan düzgün.
+
+Türkçe İş Terminolojisi
+"Satış Hızı", "Uçuş Takvimi", "Partner DNA", "Maliyet Fırsatı" — sektör terimleri
+doğal ve tutarlı kullanılmış.
+
+ZAYIF YÖNLER
+─────────────
+
+5 Yerde İngilizce "Early Bird"
+buildActionPlaybook() içinde "early bird" terimi Türkçeye çevrilmemiş.
+Öneri: "Erken rezervasyon avantajı" veya "erken rezervasyon fırsatı" kullanılmalı.
+
+Tarih Formatı Tutarsızlığı
+  • Bazı yerlerde: DD.MM.YYYY
+  • Bazı yerlerde: YYYY-MM-DD
+Türkçe standart DD.MM.YYYY; teknik log alanları ISO 8601 — tutarlı ayrım yapılmalı.
+
+İngilizce Hata Mesajları
+"IndexedDB not available", "Snapshot limit reached" gibi console mesajları
+İngilizce. CEO/pilot kullanıcıya görünmeden önce Türkçeleştirilmeli.
+
+================================================================================
+7. VERİ MİMARİSİ — 6,0 / 10
+================================================================================
+
+GÜÇLÜ YÖNLER
+─────────────
+
+İki Katmanlı Depolama
+  • localStorage : Ayarlar ve operasyonel durum (~25+ anahtar)
+  • IndexedDB    : Charter/REZ verisi — SummerTourFlightDB v2 (5–60 MB, 5 object store)
+Bu ayrım mantıklı; büyük binary blob'lar IDB'de, hızlı erişim gerektiren config
+localStorage'da.
+
+Snapshot Sistemi
+10 snapshot slot, zaman damgalı geri dönüş — iyi tasarım.
+
+KRİTİK AÇIKLAR
+───────────────
+
+D1 — JSON Yedek IndexedDB İçermiyor (VERİ KAYBI RİSKİ)
+exportStateBackup() yalnızca localStorage anahtarlarını dışa aktarıyor.
+IndexedDB şunları içeriyor ve yedeklenMİYOR:
+  • current_raw  : Ham Excel verisi
+  • current_rez  : Rezervasyon verisi
+  • 10 snapshot  : Geri dönüş noktaları
+  • S25 referans : Geçmiş sezon karşılaştırma verisi (5–60 MB)
+
+Kritik kayıp senaryosu:
+  1. Kullanıcı "Yedek İndir"        → JSON dosyası kaydedilir (IDB YOK)
+  2. "Tüm Veriyi Sıfırla"           → IDB temizlenir
+  3. "Yedek Yükle"                  → Yalnızca localStorage geri gelir
+  4. SONUÇ: Tüm uçuş ve REZ verisi kalıcı olarak kaybolur.
+
+D2 — Non-Atomic IDB Yazma
+saveSnapshot() (satır 19553–19568) dört ardışık dbSet() çağrısı yapıyor,
+tek transaction değil. İkinci yazma sırasında çökme → yarı yazılmış, tutarsız
+snapshot.
+
+D3 — Schema Migrasyon Yok
+IndexedDB onupgradeneeded (satır 19487) v1→v2 migrasyon mantığı içermiyor.
+Mevcut v1 verisi olan kullanıcı v2'ye geçince veri kaybolabilir.
+
+================================================================================
+ZORUNLU DÜZELTMELER (SHIP ÖNCESİ)
+================================================================================
+
+ACİL — GÜVENLİK (5 adet, toplam ~30 dakika)
+────────────────────────────────────────────
+#   Satır          Tür       Düzeltme
+─────────────────────────────────────────────────────────────────────────────
+S1  4163           XSS-HIGH  ${esc(pKey)}
+S2  4221           XSS-HIGH  esc(item.key) — her iki dalda
+S3  4169           XSS-HIGH  esc(r.Flight), esc(r.Airline)
+S4  19637, 22961   XSS-MED   esc(e.message) — iki ayrı satır
+S5  19186–19187    XSS-MED   esc(versionMsg), esc(timestampMsg)
+
+KRİTİK — VERİ GÜVENLİĞİ (~2 saat)
+─────────────────────────────────────
+#   Konu                              Düzeltme
+─────────────────────────────────────────────────────────────────────────────
+D1  JSON yedek IndexedDB içermiyor    exportStateBackup() içine IDB dump ekle
+D2  Non-atomic IDB yazma              saveSnapshot() tek transaction ile yaz
+
+================================================================================
+ÖNERİLEN SONRAKI ADIMLAR (ZORUNLU DEĞİL)
+================================================================================
+
+Kısa Vadeli (1–2 hafta):
+  • recoverableFactor parametresini CEO ayarlarına taşı
+  • "early bird" → "erken rezervasyon avantajı" (5 yer)
+  • Dokunma hedefleri: .btn-sm için min-height/min-width: 44px
+  • Chart instance destroy() ekle
+
+Orta Vadeli (1 ay):
+  • xlsx'yi yalnızca Worker'da tut (~900 KB tasarruf)
+  • Responsive breakpoint düzeltmeleri
+  • Tarih formatı tutarlılığı
+  • Hata mesajlarını Türkçeleştir
+
+Uzun Vadeli:
+  • IndexedDB v1→v2 migrasyon mantığı
+  • lazy section loading (ilk yük optimizasyonu)
+
+================================================================================
+GÜÇLÜ YANLAR ÖZETİ
+================================================================================
+
+  ✓ v111 PACE matematik düzeltmeleri tümü matematiksel olarak doğru
+  ✓ SRI/CSP tedarik zinciri güvenliği örneksel (5 kütüphane SHA-512 ile sabitli)
+  ✓ Türkçe sesli uyumu (_trSuffix) teknik açıdan doğru, test kapsıyor
+  ✓ CSS design token sistemi eksiksiz dark/light mode
+  ✓ ARIA/klavye erişimi WCAG AA Tab örüntüsünde örneksel
+  ✓ Dahili test paketi ~105 test (_DEBUG bayrağı arkasında)
+  ✓ Web Worker Excel parse offload mimarisi doğru
+  ✓ Partner DNA analizi ticari açıdan olgun
+  ✓ Tek dosya dağıtım modeli bağlantısız ortam için ideal
+
+================================================================================
+SON KARAR
+================================================================================
+
+5 XSS düzeltmesi (~30 dakika) + 2 veri mimarisi düzeltmesi (~2 saat)
+tamamlandıktan sonra production'a alınabilir.
+
+Matematik ve ticari mantık üretim kalitesindedir.
+Güvenlik ve veri mimarisi açıkları kapatılmadan ship edilmemelidir.
+
+================================================================================
+Analiz: 7 Bağımsız Ajan — CEO/Ticari, Tasarım/UX, Mühendislik, Matematik,
+        OWASP+STRIDE Güvenlik, Performans, Türkçe Yerelleştirme, Veri Mimarisi
+Tarih : 23 Haziran 2026
+================================================================================
