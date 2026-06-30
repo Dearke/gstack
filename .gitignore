@@ -44,3 +44,7 @@ docs/throughput-*.json
 
 # gbrain local source-staging dir (capability checks, source clones) — runtime artifact
 .sources/
+deliverables/FlightDeck_v111_26_TEST.html
+deliverables/FlightDeck_v111_55_TEST.html
+deliverables/FlightDeck_v111_65_TEST.html
+deliverables/FlightDeck_v111_67_TEST.html

@@ -1021,3 +1021,50 @@ add --path <dir>` (no `--url`): URL-managed sources can auto-reclone, and the
 sync code walk for them requires an explicit `--allow-reclone` opt-in.
 
 <!-- gstack-gbrain-search-guidance:end -->
+
+## gstack
+
+**Kurulum (her geliştirici bir kez çalıştırır):**
+```bash
+git clone --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
+cd ~/.claude/skills/gstack && ./setup --team
+```
+
+Web tarama için her zaman `/browse` skillini kullan. `mcp__claude-in-chrome__*` araçlarını ASLA kullanma — bunlar yavaş, güvenilmez ve bu proje tarafından kullanılmıyor.
+
+Kullanılabilir gstack skilleri:
+- `/office-hours` — Ürün fikirleri ve strateji beyin fırtınası
+- `/plan-ceo-review` — CEO/kurucu modu plan incelemesi
+- `/plan-eng-review` — Mühendislik yöneticisi modu plan incelemesi
+- `/plan-design-review` — Tasarımcı gözüyle plan incelemesi
+- `/design-consultation` — Sıfırdan tasarım sistemi
+- `/design-shotgun` — Görsel tasarım keşfi
+- `/design-html` — Üretim kalitesi HTML/CSS oluşturma
+- `/review` — PR incelemesi
+- `/ship` — Ship iş akışı: testler, versiyon, PR
+- `/land-and-deploy` — Merge → deploy → canary doğrulama
+- `/canary` — Deploy sonrası izleme
+- `/benchmark` — Performans regresyon tespiti
+- `/browse` — Hızlı headless tarayıcı (QA ve test için)
+- `/connect-chrome` — GStack Browser'ı başlat
+- `/qa` — Web uygulaması QA testi ve hata düzeltme
+- `/qa-only` — Sadece rapor modu QA
+- `/design-review` — Görsel tasarım denetimi ve düzeltme
+- `/setup-browser-cookies` — Tarayıcı çerezlerini içe aktar
+- `/setup-deploy` — Deploy ayarlarını yapılandır
+- `/setup-gbrain` — GBrain kurulumu
+- `/retro` — Haftalık mühendislik retrospektifi
+- `/investigate` — Sistematik hata ayıklama
+- `/document-release` — Ship sonrası dokümantasyon güncellemesi
+- `/document-generate` — Eksik dokümantasyon oluşturma
+- `/codex` — OpenAI Codex CLI sarmalayıcı
+- `/cso` — Güvenlik denetimi (OWASP Top 10 + STRIDE)
+- `/autoplan` — Otomatik inceleme pipeline'ı
+- `/plan-devex-review` — Geliştirici deneyimi plan incelemesi
+- `/devex-review` — Canlı geliştirici deneyimi denetimi
+- `/careful` — Yıkıcı komutlar için güvenlik koruması
+- `/freeze` — Dosya düzenlemelerini belirli bir dizinle sınırla
+- `/guard` — Tam güvenlik modu
+- `/unfreeze` — Freeze sınırını kaldır
+- `/gstack-upgrade` — gstack'i güncelle
+- `/learn` — Proje öğrenmelerini yönet
